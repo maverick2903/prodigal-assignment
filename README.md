@@ -90,17 +90,6 @@ This tool provides automated analysis of call transcripts between agents and bor
 
 6. View results in the Call Quality Metrics tab for visualization of the conversation flow
 
-## 📊 Analysis Approaches
-
-### Pattern Matching
-- Uses regular expressions to identify predefined patterns
-- Fast and doesn't require API keys
-- May produce false positives or miss contextual nuances
-
-### LLM-based Analysis
-- Uses Google's Gemini AI to understand context and nuance
-- More accurate for complex scenarios
-- Requires an API key and internet connection
 
 ## 🧪 Project Structure
 
