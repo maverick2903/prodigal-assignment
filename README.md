@@ -119,11 +119,3 @@ maverick2903-prodigal-assignment/
 └── task3_metrics/              # Call quality analysis
     └── call_quality.py         # Metrics calculation
 ```
-
-## 📝 License
-
-[MIT License](LICENSE)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
