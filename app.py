@@ -11,6 +11,9 @@ import matplotlib.patches as mpatches
 
 st.title("📞 Call Analysis Tool")
 
+st.sidebar.header("🔑 Gemini API Key")
+gemini_api_key = st.sidebar.text_input("Enter your Gemini API Key", type="password")
+
 uploaded_file = st.file_uploader("Upload a conversation JSON file", type=["json"])
 if uploaded_file:
     conversation = json.load(uploaded_file)
@@ -28,7 +31,8 @@ if uploaded_file:
                 if approach == "Pattern Matching":
                     detector = ProfanityRegexDetector()
                 else:
-                    detector = ProfanityLLMDetector()
+                    print(gemini_api_key)
+                    detector = ProfanityLLMDetector(api_key=gemini_api_key)
                 result = detector.analyze_conversation(convo)
                 return result.get("agent_profanity"), result.get("borrower_profanity")
 
@@ -36,13 +40,16 @@ if uploaded_file:
                 if approach == "Pattern Matching":
                     detector = ComplianceRegexDetector()
                 else:
-                    detector = ComplianceLLMDetector()
+                    detector = ComplianceLLMDetector(api_key=gemini_api_key)
                 result = detector.analyze_conversation(convo)
                 return result.get("privacy_violation"), None
-
-        # Run the selected analysis
-        with st.spinner("Analyzing..."):
-            flag1, flag2 = run_detector(entity, approach, conversation)
+            
+        if approach == "LLM" and not gemini_api_key:
+            st.warning("Please enter your Gemini API key in the sidebar.")
+        else:
+            # Run the selected analysis
+            with st.spinner("Analyzing..."):
+                flag1, flag2 = run_detector(entity, approach, conversation)
 
         # Show results
         st.success("Analysis complete.")
@@ -150,23 +157,21 @@ if uploaded_file:
                         'Text': seg["text"]
                     })
             
-            # Create the visualization
             fig, ax = plt.subplots(figsize=(12, 6))
+
+            agent_color = "#4682B4"
+            customer_color = "#6B8E23"
+            overlap_color = "#FF6347" 
+            silence_color = "#DCDCDC"
             
-            # Define colors
-            agent_color = "#4682B4"  # Steel Blue
-            customer_color = "#6B8E23"  # Olive Drab
-            overlap_color = "#FF6347"  # Tomato
-            silence_color = "#DCDCDC"  # Light Gray
-            
-            # Plot silences first (in background)
+            # Plot silences
             for segment in silence_segments:
                 ax.barh(y=0, width=segment['End'] - segment['Start'], 
                         left=segment['Start'], height=2, color=silence_color, alpha=0.3)
             
-            # Plot Agent speech (top row)
+            # Plot Agent speech
             for segment in agent_segments:
-                # Check for overlaps with customer
+                # Check for overlaps
                 is_overlapping = False
                 for cust_seg in customer_segments:
                     if (segment['Start'] < cust_seg['End'] and 
@@ -178,14 +183,13 @@ if uploaded_file:
                 bar = ax.barh(y=1, width=segment['End'] - segment['Start'], 
                             left=segment['Start'], height=0.8, color=color)
                 
-                # Add text annotation if there's enough room
+                # text annotation
                 if segment['End'] - segment['Start'] > 3:
                     short_text = segment['Text'][:20] + "..." if len(segment['Text']) > 20 else segment['Text']
                     ax.text(segment['Start'] + 0.1, 1, short_text, va='center', fontsize=8, color='white')
             
-            # Plot Customer speech (bottom row)
+            # Plot Customer speech
             for segment in customer_segments:
-                # Check for overlaps with agent
                 is_overlapping = False
                 for agent_seg in agent_segments:
                     if (segment['Start'] < agent_seg['End'] and 
@@ -196,8 +200,7 @@ if uploaded_file:
                 color = overlap_color if is_overlapping else customer_color
                 bar = ax.barh(y=0, width=segment['End'] - segment['Start'], 
                             left=segment['Start'], height=0.8, color=color)
-                
-                # Add text annotation if there's enough room
+
                 if segment['End'] - segment['Start'] > 3:
                     short_text = segment['Text'][:20] + "..." if len(segment['Text']) > 20 else segment['Text']
                     ax.text(segment['Start'] + 0.1, 0, short_text, va='center', fontsize=8, color='white')
@@ -211,10 +214,8 @@ if uploaded_file:
             ax.set_xlabel("Time (seconds)")
             ax.set_title("Conversation Timeline")
             
-            # Add a grid for better time reference
             ax.grid(axis='x', linestyle='--', alpha=0.6)
-            
-            # Add legend
+
             legend_patches = [
                 mpatches.Patch(color=agent_color, label='Agent Speaking'),
                 mpatches.Patch(color=customer_color, label='Customer Speaking'),

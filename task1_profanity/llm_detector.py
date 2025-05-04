@@ -4,15 +4,10 @@ from typing import Dict, Union, List
 import google.generativeai as genai
 
 
-# Set up Gemini
-API_KEY = os.getenv("GEMINI_API_KEY")
-if not API_KEY:
-    raise EnvironmentError("GEMINI_API_KEY not set in environment.")
-
-genai.configure(api_key=API_KEY)
-
 class ProfanityLLMDetector:
-    def __init__(self):
+    def __init__(self, api_key: str = None):
+        self.api_key = api_key
+        genai.configure(api_key=self.api_key or os.getenv("GEMINI_API_KEY"))
         self.model = genai.GenerativeModel("gemini-2.0-flash")
 
     def format_conversation(self, utterances: List[Dict]) -> str:
